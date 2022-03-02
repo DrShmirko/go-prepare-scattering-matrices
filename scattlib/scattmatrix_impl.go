@@ -186,19 +186,22 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 	for (tmpSphere != nil) && (tmpSpheroid != nil) {
 		calcResSpheroid, _ := tmpSpheroid.Value.(*legacy.CalculusResult)
 		calcResSphere, _ := tmpSphere.Value.(*legacy.CalculusResult)
-		SphericalFraction := calcResSphere.SphericalFraction
+		SphericalFraction := calcResSphere.SphericalFraction / 100.0
 
 		if calcResSphere.RecordId == calcResSpheroid.RecordId {
 			combCalcRes := &legacy.CalculusResult{RecordId: calcResSphere.RecordId}
 
-			combCalcRes.Ext = SphericalFraction*calcResSphere.Ext + (1.0-SphericalFraction)*calcResSpheroid.Ext
+			combCalcRes.Ext = SphericalFraction*calcResSphere.Ext +
+				(1.0-SphericalFraction)*calcResSpheroid.Ext
 
 			combBsc := SphericalFraction*calcResSphere.Ext/calcResSphere.Lr +
 				(1.0-SphericalFraction)*calcResSpheroid.Ext/calcResSpheroid.Lr
 
-			combCalcRes.Sca = SphericalFraction*calcResSphere.Sca + (1.0-SphericalFraction)*calcResSpheroid.Sca
+			combCalcRes.Sca = SphericalFraction*calcResSphere.Sca +
+				(1.0-SphericalFraction)*calcResSpheroid.Sca
 
-			combCalcRes.Absb = SphericalFraction*calcResSphere.Absb + (1.0-SphericalFraction)*calcResSpheroid.Absb
+			combCalcRes.Absb = SphericalFraction*calcResSphere.Absb +
+				(1.0-SphericalFraction)*calcResSpheroid.Absb
 
 			combCalcRes.Lr = combCalcRes.Ext / combBsc
 			var c1, c2, c3 mat.Dense
@@ -212,9 +215,13 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 
 			combCalcRes.VolC = calcResSpheroid.VolC
 			combCalcRes.Angle = calcResSpheroid.Angle
-			if DEBUG && (SphericalFraction < 0.1) {
-				fmt.Printf("Aot = %5.2f, LR=%5.2f, MUL=%5.2f, LR=%5.2f, MUL=%5.2f\n",
-					combCalcRes.Ext, combCalcRes.Lr, combCalcRes.MuL, calcResSpheroid.Lr, calcResSpheroid.MuL)
+			combCalcRes.SphericalFraction = SphericalFraction
+
+			if DEBUG {
+				if SphericalFraction < 0.1 {
+					fmt.Printf("Aot = %5.2f, LR=%5.2f, MUL=%5.2f, LR=%5.2f, MUL=%5.2f\n",
+						combCalcRes.Ext, combCalcRes.Lr, combCalcRes.MuL, calcResSpheroid.Lr, calcResSpheroid.MuL)
+				}
 			}
 
 			legacy.CombList.PushBack(combCalcRes)
@@ -230,98 +237,18 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 	}
 }
 
-/*
-func (a *MuellerMatrixAERONET) saveToFile(fOutName string) {
-	angle, matrix := a.dll.MuellerMatrix()
-	rows, cols := matrix.Dims()
-	Vc := a.dll.Ac0()
-
-	sca := a.dll.Xsca()
-	ext := a.dll.Xext()
-	absb := a.dll.Xabs()
-
-	fout, err := os.Create(fOutName)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer fout.Close()
-
-	_, _ = fmt.Fprintf(fout, "%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
-		sca/Vc, ext/Vc, absb/Vc, Vc)
-	_, _ = fmt.Fprintf(fout, "%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t"+
-		"%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\n",
-		"Angle", "S11", "S12", "S13", "S14", "S21", "S22", "S23",
-		"S24", "S31", "S32", "S33", "S34", "S41", "S42", "S43",
-		"S44")
-
-	// Write the matrix
-	for i := 0; i < rows; i++ {
-		_, _ = fmt.Fprintf(fout, "%9.3f\t", angle[i])
-		for j := 0; j < cols; j++ {
-			_, _ = fmt.Fprintf(fout, "%9.3e\t", matrix.At(i, j)/Vc)
-		}
-		_, _ = fmt.Fprintf(fout, "\n")
-	}
-
-}
-
-func (a *MuellerMatrixAERONET) saveToFileShort(fOutName string) {
-	angle, matrix := a.dll.MuellerMatrixShort()
-	rows, _ := matrix.Dims()
-	Vc := a.dll.Ac0()
-
-	sca := a.dll.Xsca()
-	ext := a.dll.Xext()
-	absb := a.dll.Xabs()
-
-	fout, err := os.Create(fOutName)
-	if err != nil {
-		log.Fatalln(err)
-	}
-	defer fout.Close()
-
-	_, _ = fmt.Fprintf(fout, "%9.3e\t%9.3e\t%9.3e\t%9.3e\n",
-		sca/Vc, ext/Vc, absb/Vc, Vc)
-	_, _ = fmt.Fprintf(fout, "%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t"+
-		"%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\n",
-		"Angle", "S11", "S12", "S13", "S14", "S21", "S22", "S23",
-		"S24", "S31", "S32", "S33", "S34", "S41", "S42", "S43",
-		"S44")
-
-	// Write the matrix
-	for i := 0; i < rows; i++ {
-		_, _ = fmt.Fprintf(fout, "%9.3f\t", angle[i])
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", matrix.At(i, 0)/Vc)  //S11
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", matrix.At(i, 1)/Vc)  //S12
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S13
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S13
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", matrix.At(i, 1)/Vc)  //S21
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", matrix.At(i, 2)/Vc)  //S22
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S23
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S24
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S31
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S32
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", matrix.At(i, 3)/Vc)  //S33
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", matrix.At(i, 4)/Vc)  //S34
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S41
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)                 //S42
-		_, _ = fmt.Fprintf(fout, "%9.3e\t", -matrix.At(i, 4)/Vc) //S43
-		_, _ = fmt.Fprintf(fout, "%9.3e\n", matrix.At(i, 5)/Vc)  //S44
-	}
-
-}*/
-
 // SetWl прокси до внитреннего метода dll.
 // Устанавливает длину волны
 func (a *MuellerMatrixAERONET) SetWl(wvl float64) {
 
-	if wvl < 0.440 {
-		wvl = 0.440
-	} else if wvl > 1.064 {
-		wvl = 1.064
+	if a.Wvl != wvl {
+		if wvl < 0.440 {
+			wvl = 0.440
+		} else if wvl > 1.064 {
+			wvl = 1.064
+		}
+		a.dll.SetWl(wvl)
 	}
-
-	a.dll.SetWl(wvl)
 }
 
 func (a *MuellerMatrixAERONET) Finalize() {

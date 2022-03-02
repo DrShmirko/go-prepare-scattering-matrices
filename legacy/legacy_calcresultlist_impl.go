@@ -3,6 +3,10 @@ package legacy
 import (
 	"container/list"
 	"fmt"
+	"gonum.org/v1/plot"
+	"gonum.org/v1/plot/plotter"
+	"gonum.org/v1/plot/plotutil"
+	"gonum.org/v1/plot/vg"
 	"os"
 )
 
@@ -36,6 +40,7 @@ func (c *CalcResultsList) SaveResults() error {
 
 	err := c.Apply(func(cr *CalculusResult) {
 		fname := fmt.Sprintf("out/%s_%05d.out", c.prefix, cr.RecordId)
+		saveto := fmt.Sprintf("pic/%s_%05d.pdf", c.prefix, cr.RecordId)
 		fout, err := os.Create(fname)
 
 		if err != nil {
@@ -46,7 +51,7 @@ func (c *CalcResultsList) SaveResults() error {
 		defer func() {
 			err := fout.Close()
 			if err != nil {
-
+				fmt.Printf("Error closing file %s, err=%s", fname, err)
 			}
 		}()
 
@@ -64,7 +69,7 @@ func (c *CalcResultsList) SaveResults() error {
 		for i := 0; i < rows; i++ {
 			_, _ = fmt.Fprintf(fout, "%9.3f\t", angle[i])
 			_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 0)/Vc)  //S11
-			_, _ = fmt.Fprintf(fout, "%9.3e\t", -M.At(i, 1)/Vc) //S12
+			_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 1)/Vc)  //S12
 			_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)            //S13
 			_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)            //S13
 			_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 1)/Vc)  //S21
@@ -81,8 +86,50 @@ func (c *CalcResultsList) SaveResults() error {
 			_, _ = fmt.Fprintf(fout, "%9.3e\n", M.At(i, 5)/Vc)  //S44
 		}
 
-		return
+		_ = cr.DoPlotPolarization(saveto)
 	})
 
 	return err
+}
+
+// DoPlotPolarization Рисует график угловой зависимости степени линейной поляризции
+// и сохраняет его в файл saveto. Формат файла выбирается на основании расширения.
+// Поддерживаются форматы png, pdf.
+// Возвращает nil в случае успешного завершения метода
+func (c *CalculusResult) DoPlotPolarization(saveto string) error {
+	angle := c.Angle
+	mat := c.MuellerMat
+	pts := make(plotter.XYs, len(angle))
+
+	// MuL = - S12/S11 * 100
+	// Но S11 на самом деле S11
+	for i, v := range angle {
+		S11 := mat.At(i, 0)
+		S12 := mat.At(i, 1)
+		pts[i].X = v
+		pts[i].Y = -S12 / S11 * 100.0
+	}
+
+	plt := plot.New()
+	sf := fmt.Sprintf("SF = %4.2f", c.SphericalFraction)
+	err := plotutil.AddLines(plt, sf, pts)
+	plt.X.Label.Text = "Scattering angle"
+	plt.Y.Label.Text = "Degree of linear polarization"
+	plt.Title.Text = "μL vs ϑ"
+
+	if err != nil {
+		return err
+	}
+
+	plt.Add(plotter.NewGrid())
+	plt.Legend.Top = true
+	plt.X.Padding = 0 * vg.Centimeter
+	plt.Y.Padding = 0 * vg.Centimeter
+	err = plt.Save(15*vg.Centimeter, 12*vg.Centimeter, saveto)
+
+	if err != nil {
+		return err
+	}
+
+	return nil
 }

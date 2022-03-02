@@ -31,7 +31,7 @@ func carray2slice(array *C.float, len int) ([]float32, error) {
 	var list []float32
 
 	if array == nil {
-		return nil, errors.New("Си массив - указатель на NULL")
+		return nil, errors.New("cи массив - указатель на NULL")
 	}
 	sliceHeader := (*reflect.SliceHeader)(unsafe.Pointer(&list))
 	sliceHeader.Cap = len
@@ -530,7 +530,7 @@ func (s *Singleton) MuellerMatrix() ([]float64, *mat.Dense) {
 	// углу должен быть равен АОТ
 	for i := 0; i < N; i++ {
 		f11[i] = f11[i] * AOT / (4 * math.Pi)
-		f12[i] = f12[i] * f11[i]
+		f12[i] = -f12[i] * f11[i]
 		f22[i] = f22[i] * f11[i]
 		f33[i] = f33[i] * f11[i]
 		f34[i] = f34[i] * f11[i]
@@ -569,7 +569,7 @@ func (s *Singleton) MuellerMatrixShort() ([]float64, *mat.Dense) {
 	// углу должен быть равен АОТ
 	for i := 0; i < N; i++ {
 		f11[i] = f11[i] * AOT / (4 * math.Pi)
-		f12[i] = f12[i] * f11[i]
+		f12[i] = -f12[i] * f11[i]
 		f22[i] = f22[i] * f11[i]
 		f33[i] = f33[i] * f11[i]
 		f34[i] = f34[i] * f11[i]
@@ -637,5 +637,3 @@ func (s *Singleton) CalcResult() *CalculusResult {
 	}
 	return ret
 }
-
-/// LDFLAGS: -L /usr/local/Cellar/gcc/11.2.0/lib/gcc/11 -lgfortran -L ../lib -lspheroid
