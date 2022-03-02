@@ -3,6 +3,7 @@ package legacy
 import (
 	"errors"
 	"fmt"
+	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
 	"log"
 	"math"
 	"os"
@@ -620,20 +621,11 @@ func (s *Singleton) SaveResult(prefix string, idx int) {
 	}
 }
 
-func (s *Singleton) CalcResult() *CalculusResult {
+func (s *Singleton) CalcResult() *calcresult.CalculusResult {
 	vc := s.Ac0()
-	_, mm := s.MuellerMatrixShort()
-	angle, _ := s.Angle()
-	ret := &CalculusResult{
-		isSpheroid: false,
-		Ext:        s.Xext(),
-		Sca:        s.Xsca(),
-		Absb:       s.Xabs(),
-		VolC:       vc,
-		Lr:         s.Lr(),
-		MuL:        s.Ldr(),
-		MuellerMat: mm,
-		Angle:      angle,
-	}
+	angle, mm := s.MuellerMatrixShort()
+	ret := calcresult.NewCalcResult(false,
+		0, s.Xext(), s.Xsca(), s.Xabs(), vc, s.Lr(), s.Ldr(), mm, angle, 1)
+
 	return ret
 }

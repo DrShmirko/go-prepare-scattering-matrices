@@ -1,4 +1,4 @@
-package legacy
+package calcresult
 
 import "gonum.org/v1/gonum/mat"
 

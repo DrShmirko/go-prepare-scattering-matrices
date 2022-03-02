@@ -1,10 +1,11 @@
-package legacy
+package calcresultlist
 
-import "container/list"
+import (
+	"github.com/kshmirko/prepare-mueller-matrices/doublyLinkedList"
+)
 
-// CalcResultsList Для чего используем список
 type CalcResultsList struct {
-	*list.List
+	*doublyLinkedList.DoublyLinkedList
 	prefix string
 }
 

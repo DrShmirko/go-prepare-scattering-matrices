@@ -3,6 +3,8 @@ package scattlib
 import (
 	"bufio"
 	"fmt"
+	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
+	"github.com/kshmirko/prepare-mueller-matrices/calcresultlist"
 
 	"gonum.org/v1/gonum/mat"
 	"io/ioutil"
@@ -109,7 +111,7 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 			tmp := a.dll.CalcResult()
 			tmp.RecordId = recId
 			tmp.SphericalFraction = sphericalFraction
-			legacy.SpheroidList.PushBack(tmp)
+			calcresultlist.SpheroidList.PushBack(tmp)
 		}
 		recId++
 		return ser
@@ -167,29 +169,29 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 			tmp := a.dll.CalcResult()
 			tmp.RecordId = recId
 			tmp.SphericalFraction = sphericalFraction
-			legacy.SpheresList.PushBack(tmp)
+			calcresultlist.SpheresList.PushBack(tmp)
 		}
 		recId++
 		return ser
 	})
 
-	fmt.Printf("Len1 = %d, Len2 = %d\n", legacy.SpheresList.Len(),
-		legacy.SpheresList.Len())
+	fmt.Printf("Len1 = %d, Len2 = %d\n", calcresultlist.SpheresList.Size(),
+		calcresultlist.SpheresList.Size())
 
 	// Итак, мы имеем два списка с результатами моделирования
 	// legacy.SpheroidsList и legacy.SpheresList
 	// номер элемента в каждом из списков соответствует номеру измерений
-	tmpSpheroid := legacy.SpheroidList.Front()
-	tmpSphere := legacy.SpheresList.Front()
+	tmpSpheroid := calcresultlist.SpheroidList.Front()
+	tmpSphere := calcresultlist.SpheresList.Front()
 
 	// Iterate over lists and combine data
 	for (tmpSphere != nil) && (tmpSpheroid != nil) {
-		calcResSpheroid, _ := tmpSpheroid.Value.(*legacy.CalculusResult)
-		calcResSphere, _ := tmpSphere.Value.(*legacy.CalculusResult)
+		calcResSpheroid := tmpSpheroid.Value()
+		calcResSphere := tmpSphere.Value()
 		SphericalFraction := calcResSphere.SphericalFraction / 100.0
 
 		if calcResSphere.RecordId == calcResSpheroid.RecordId {
-			combCalcRes := &legacy.CalculusResult{RecordId: calcResSphere.RecordId}
+			combCalcRes := &calcresult.CalculusResult{RecordId: calcResSphere.RecordId}
 
 			combCalcRes.Ext = SphericalFraction*calcResSphere.Ext +
 				(1.0-SphericalFraction)*calcResSpheroid.Ext
@@ -224,15 +226,15 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 				}
 			}
 
-			legacy.CombList.PushBack(combCalcRes)
+			calcresultlist.CombList.PushBack(combCalcRes)
 		}
 		tmpSpheroid = tmpSpheroid.Next()
 		tmpSphere = tmpSphere.Next()
 	}
 
-	fmt.Printf("Len3 = %d\n", legacy.CombList.Len())
+	fmt.Printf("Len3 = %d\n", calcresultlist.CombList.Size())
 
-	if err := legacy.CombList.SaveResults(); err != nil {
+	if err := calcresultlist.CombList.SaveResults(); err != nil {
 		fmt.Println("Ошибка сохранения файлов")
 	}
 }

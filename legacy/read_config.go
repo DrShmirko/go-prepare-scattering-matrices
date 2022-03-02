@@ -35,8 +35,12 @@ func (s *Singleton) ReadConfig(spheres bool) {
 	}
 
 	var (
-		key, keyEL, keySUB, keyLS, key_org, key_fx, key_RD1, key_SD, id, nmd, kn, kr, km, nratn   int
-		wl, rn, rk, rgmin, rgmax, wlmin, wlmax, grid_i, sd_i, cm_i, sm_i, rmm_i, r_i, rd_i, ang_i float64
+		key, keyEL, keySUB, keyLS, key_org,
+		key_fx, key_RD1, key_SD, id, nmd, kn,
+		kr, km, nratn int
+
+		wl, rn, rk, rgmin, rgmax, wlmin, wlmax, grid_i,
+		sd_i, cm_i, sm_i, rmm_i, r_i, rd_i, ang_i float64
 	)
 
 	scanner := bufio.NewScanner(fin)
