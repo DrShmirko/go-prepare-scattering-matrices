@@ -2,7 +2,8 @@ package legacy
 
 import "gonum.org/v1/gonum/mat"
 
-// CalculusResult - результаты расчетов
+// CalculusResult - результаты расчетов, описание того, что получено
+// программой
 type CalculusResult struct {
 	isSpheroid                    bool
 	RecordId                      int

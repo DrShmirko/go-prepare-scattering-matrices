@@ -8,6 +8,7 @@ type CalcResultsList struct {
 	prefix string
 }
 
+// Глобальные переменные хранят  соответствующие списки результатов расчета
 var (
 	SpheroidList *CalcResultsList
 	SpheresList  *CalcResultsList

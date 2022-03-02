@@ -135,11 +135,11 @@ func (s *Singleton) ResetToDefaultState() {
 // else if ndp=1, then data already loaded into memory
 func (s *Singleton) DoCalc(ndp int) int {
 	if !s.IsAllocated {
-		fmt.Printf("Internal variables should be allocated first")
+		fmt.Printf("Внутренние переменые сперва должны быть инициализированы")
 	}
 	C.ndp = C.int(ndp)
 	if ndp == 0 {
-		log.Println("\nЗагруаем ядра с диска")
+		log.Println("\nЗагружаем ядра с диска")
 	}
 	C.optchar_(&C.ndp)
 	return int(C.ndp)
@@ -552,7 +552,7 @@ func (s *Singleton) MuellerMatrix() ([]float64, *mat.Dense) {
 }
 
 func (s *Singleton) MuellerMatrixShort() ([]float64, *mat.Dense) {
-	ret := mat.NewDense(int(C.km), 16, nil)
+	ret := mat.NewDense(int(C.km), 6, nil)
 
 	angle, _ := s.Angle()
 	AOT := s.Xsca()

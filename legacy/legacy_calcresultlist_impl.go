@@ -10,8 +10,8 @@ import (
 	"os"
 )
 
-// NewCalcResultsList - конструктор нового специализированного типа для хранения
-// результатов расчетов
+// NewCalcResultsList - конструктор нового специализированного типа для
+// хранения результатов расчетов
 func NewCalcResultsList(prefix string) *CalcResultsList {
 	return &CalcResultsList{
 		List:   list.New(),
@@ -30,7 +30,8 @@ func (c *CalcResultsList) Apply(fun func(cr *CalculusResult)) error {
 		}
 	}
 	if errCnt != 0 {
-		return fmt.Errorf("при сохранении данных %d записи имеют странный тип", errCnt)
+		return fmt.Errorf("при сохранении данных %d записи имеют"+
+			" странный тип", errCnt)
 	}
 	return nil
 }
@@ -59,7 +60,8 @@ func (c *CalcResultsList) SaveResults() error {
 		M := cr.MuellerMat
 		rows, _ := M.Dims()
 		Vc := cr.VolC
-		_, _ = fmt.Fprintf(fout, "%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e# Ext/V, Sca/V, Absb/V, LR, MuL, V \n",
+		_, _ = fmt.Fprintf(fout, "%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e"+
+			"# Ext/V, Sca/V, Absb/V, LR, MuL, V \n",
 			cr.Ext/Vc, cr.Sca/Vc, cr.Absb/Vc, cr.Lr, cr.MuL, cr.VolC)
 		_, _ = fmt.Fprintf(fout, "%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t"+
 			"%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\n",

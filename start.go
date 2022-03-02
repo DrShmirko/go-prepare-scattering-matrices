@@ -9,12 +9,8 @@ import (
 )
 
 func main() {
-	//version, _ := num.Version()
-	//fmt.Printf("Версия GoNum: %s\n\n\n", version)
-
-	// Define command line flags
-	sphericalFraction := flag.Float64("sf", 1, "Установить пороговое значение сферичности")
-	//isSpheres := flag.Bool("spheres", false, "Использовать сферические ядра или сфероидальные")
+	sphericalFraction := flag.Float64("sf", 1,
+		"Установить пороговое значение сферичности")
 	skipRows := flag.Int("skip", 6, "Сколько строк пропускать")
 	waveLen := flag.Float64("wvl", 0.870, "Длина волны для расчета матриц")
 
@@ -26,6 +22,7 @@ func main() {
 	// file is presented in the command line
 	if flag.NArg() != 1 {
 		log.Println("Необхоимо указать хотя бы одно имя файла с данными.")
+		flag.PrintDefaults()
 		return
 	}
 
@@ -43,7 +40,8 @@ func main() {
 
 	// check weather skipRows in valid range
 	if *skipRows < 0 || *skipRows > 10 {
-		log.Println("Число пропускаемых строк должно быть положительно и меньше 10.")
+		log.Println("Число пропускаемых строк должно быть " +
+			"положительно и меньше 10.")
 	}
 
 	// Initialization of solvers
