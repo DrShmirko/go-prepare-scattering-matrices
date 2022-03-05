@@ -6,7 +6,7 @@ type PolyFit struct {
 	Coeffs []float64
 }
 
-type IPolyFit interface {
+type IFit interface {
 	Fit() error
 	SetXY(ax, ay []float64)
 	Evaluate(x float64) (ret float64)

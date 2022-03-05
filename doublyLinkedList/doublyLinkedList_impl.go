@@ -21,7 +21,6 @@ func (d *DoublyLinkedList) PushFront(data *calcresult.CalculusResult) {
 		d.head = newnode
 	}
 	d.len++
-	return
 }
 
 func (d *DoublyLinkedList) PushBack(data *calcresult.CalculusResult) {
@@ -42,8 +41,6 @@ func (d *DoublyLinkedList) PushBack(data *calcresult.CalculusResult) {
 		d.tail = newnode
 	}
 	d.len++
-
-	return
 }
 
 func (d *DoublyLinkedList) Front() *Node {

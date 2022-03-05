@@ -5,7 +5,7 @@ import (
 	"gonum.org/v1/gonum/mat"
 )
 
-func NewPolyFit(order int) IPolyFit {
+func NewPolyFit(order int) IFit {
 	return &PolyFit{
 		order:  order,
 		x:      nil,

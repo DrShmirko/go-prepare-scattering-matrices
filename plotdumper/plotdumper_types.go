@@ -1,6 +1,7 @@
 package plotdumper
 
 import (
+	"fmt"
 	"github.com/vdobler/chart"
 	"github.com/vdobler/chart/imgg"
 	"github.com/vdobler/chart/svgg"
@@ -14,6 +15,7 @@ import (
 	"github.com/ajstarks/svgo"
 )
 
+// PlotDumper - структура, описывающая объект, сохраняющий данные
 type PlotDumper struct {
 	N, M, W, H, Cnt           int
 	S                         *svg.SVG
@@ -21,6 +23,9 @@ type PlotDumper struct {
 	svgFile, imgFile, txtFile *os.File
 }
 
+// NewPlotDumper - конструктор
+// n, m - количество графиков по-вертикали и по-горизонтали
+// w, h - ширина и высота одной панели
 func NewPlotDumper(name string, n, m, w, h int) *PlotDumper {
 	var err error
 	dumper := PlotDumper{N: n, M: m, W: w, H: h}
@@ -40,7 +45,7 @@ func NewPlotDumper(name string, n, m, w, h int) *PlotDumper {
 	}
 	dumper.I = image.NewRGBA(image.Rect(0, 0, n*w, m*h))
 	bg := image.NewUniform(color.RGBA{0xff, 0xff, 0xff, 0xff})
-	draw.Draw(dumper.I, dumper.I.Bounds(), bg, image.ZP, draw.Src)
+	draw.Draw(dumper.I, dumper.I.Bounds(), bg, image.Point{}, draw.Src)
 
 	dumper.txtFile, err = os.Create(name + ".txt")
 	if err != nil {
@@ -50,29 +55,49 @@ func NewPlotDumper(name string, n, m, w, h int) *PlotDumper {
 	return &dumper
 }
 
+// Close - закрывает дампер
 func (d *PlotDumper) Close() {
-	png.Encode(d.imgFile, d.I)
-	d.imgFile.Close()
+	err := png.Encode(d.imgFile, d.I)
+	if err != nil {
+		fmt.Printf("Проблемы с сохранением файла в png")
 
+	}
+	err = d.imgFile.Close()
+	if err != nil {
+		fmt.Printf("Проблемы с закрытием файла в png")
+
+	}
 	d.S.End()
-	d.svgFile.Close()
 
-	d.txtFile.Close()
+	err = d.svgFile.Close()
+	if err != nil {
+		fmt.Printf("Проблемы с закрытием файла в svg")
+
+	}
+
+	err = d.txtFile.Close()
+	if err != nil {
+		fmt.Printf("Проблемы с закрытием файла в txt")
+
+	}
 }
 
+// Plot - отрисовка графика
 func (d *PlotDumper) Plot(c chart.Chart) {
 	row, col := d.Cnt/d.N, d.Cnt%d.N
 
 	igr := imgg.AddTo(d.I, col*d.W, row*d.H, d.W, d.H, color.RGBA{0xff, 0xff, 0xff, 0xff}, nil, nil)
 	c.Plot(igr)
 
-	sgr := svgg.AddTo(d.S, col*d.W, row*d.H, d.W, d.H, "", 12, color.RGBA{0xff, 0xff, 0xff, 0xff})
+	sgr := svgg.AddTo(d.S, col*d.W, row*d.H, d.W, d.H, "FiraCode Nerd Font", 12, color.RGBA{0xff, 0xff, 0xff, 0xff})
 	c.Plot(sgr)
 
 	tgr := txtg.New(80, 30)
 	c.Plot(tgr)
-	d.txtFile.Write([]byte(tgr.String() + "\n\n\n"))
-
+	_, err := d.txtFile.Write([]byte(tgr.String() + "\n\n\n"))
+	if err != nil {
+		fmt.Println(err)
+	}
 	d.Cnt++
 
 }

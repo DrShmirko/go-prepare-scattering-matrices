@@ -7,11 +7,11 @@ import (
 	"image/color"
 )
 
-func NewCalcResult(isspheroid bool, rec_id int, ext, sca, absb, volc, lr, mul float64,
+func NewCalcResult(isspheroid bool, recId int, ext, sca, absb, volc, lr, mul float64,
 	mm *mat.Dense, angle []float64, sf float64) *CalculusResult {
 	return &CalculusResult{
 		isSpheroid:        isspheroid,
-		RecordId:          rec_id,
+		RecordId:          recId,
 		Ext:               ext,
 		Sca:               sca,
 		Absb:              absb,
@@ -62,21 +62,21 @@ func (c *CalculusResult) DoPlotPolarization(saveto string) error {
 	defer dumper.Close()
 
 	angle := c.Angle
-	mat := c.MuellerMat
+	mtrx := c.MuellerMat
 	dp := make([]float64, len(angle))
 
-	for i, _ := range angle {
-		S11 := mat.At(i, 0)
-		S12 := mat.At(i, 1)
+	for i := range angle {
+		S11 := mtrx.At(i, 0)
+		S12 := mtrx.At(i, 1)
 		dp[i] = -S12 / S11 * 100.0
 	}
 
 	pl := chart.ScatterChart{Title: "Polarization"}
 
-	pl.XRange.Label, pl.YRange.Label = "Scattering angle", "DOP"
+	pl.XRange.Label, pl.YRange.Label = "Scattering angle", "DOP, %"
 	pl.XRange.TicSetting.Grid = 1
 	pl.AddDataPair("", angle, dp, chart.PlotStyleLines,
-		chart.Style{Symbol: '#', SymbolColor: color.NRGBA{0x00, 0x00, 0xff, 0xff}, LineStyle: chart.SolidLine})
+		chart.Style{Symbol: '#', SymbolColor: color.NRGBA{B: 0xff, A: 0xff}, LineStyle: chart.SolidLine})
 	pl.XRange.ShowZero = true
 	pl.YRange.ShowZero = true
 	pl.XRange.Fixed(0, 180, 30)
