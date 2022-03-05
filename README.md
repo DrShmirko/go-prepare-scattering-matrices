@@ -39,3 +39,8 @@ Usage of ./prepare-mueller-matrices:
 Программа настроена на работу с данными на следующих длинах волн 0.4406 0.675, 0.870 и 1.020 мкм, но на некотроых станциях 
 [AERONET](https://aeronet.gsfc.nasa.gov/new_web/download_all_v3_inversions.html) 
 данные получаются на других длинах волн. Текущая версия программы пропускает их и не обрабатывает.
+
+
+## Если у вас Windows
+
+Для запуска программы на windows, необходимо ее собрать, предварительно скачав из релизов в этом репозитории [архив с динамическими библиотеками](https://github.com/DrShmirko/go-prepare-scattering-matrices/releases/download/v0.2.0/shared_libraries.zip).
