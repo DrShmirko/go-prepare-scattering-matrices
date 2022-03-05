@@ -16,7 +16,6 @@ import (
 	"github.com/go-gota/gota/series"
 	"github.com/kshmirko/prepare-mueller-matrices/aeronet"
 	"github.com/kshmirko/prepare-mueller-matrices/legacy"
-	"github.com/kshmirko/prepare-mueller-matrices/mathutils"
 	"gonum.org/v1/gonum/interp"
 )
 
@@ -55,7 +54,7 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 	df := dataframe.ReadCSV(ioContent, dataframe.HasHeader(true))
 
 	// подготавливаем инструмент для аппроксимации оптической толщи
-	pf := mathutils.NewPolyFit(1)
+	//pf := mathutils.NewPolyFit(1)
 
 	// Prepare for interpolation of refractive index
 	pl := interp.PiecewiseLinear{}
@@ -64,55 +63,67 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 	LgWavelength := make([]float64, len(aeronet.IdxAot))
 	LgAerOptThickness := make([]float64, len(aeronet.IdxAot))
 
+	// Initialize lists for storage processed items
+	SpheroidList := calcresultlist.NewCalcResultsList("sphrd")
+	SpheresList := calcresultlist.NewCalcResultsList("sphrs")
+	CombList := calcresultlist.NewCalcResultsList("total")
+
+	// Before Rapply, let's filter out those records, in which Spherical Fraction < sf.
+	df = df.Filter(dataframe.F{
+		Colidx:     aeronet.IdxSphrericalFract,
+		Comparator: series.LessEq,
+		Comparando: sf,
+	})
+
 	recId := 0
 	// apply calc function to each row of dataset
 	df.Rapply(func(ser series.Series) series.Series {
 
 		sphericalFraction := ser.Elem(aeronet.IdxSphrericalFract).Float()
 
-		if sphericalFraction <= sf {
-			reIdx := ser.Subset(aeronet.IdxReM).Float()
-			imIdx := ser.Subset(aeronet.IdxImM).Float()
+		reIdx := ser.Subset(aeronet.IdxReM).Float()
+		imIdx := ser.Subset(aeronet.IdxImM).Float()
 
-			// Interpolate refractive index
-			// Real part
-			_ = pl.Fit(aeronet.Wvl, reIdx)
-			a.dll.SetRn(pl.Predict(a.Wvl))
+		// Interpolate refractive index
+		// Real part
+		_ = pl.Fit(aeronet.Wvl, reIdx)
+		a.dll.SetRn(pl.Predict(a.Wvl))
 
-			// Imaginary part
-			_ = pl.Fit(aeronet.Wvl, imIdx)
-			a.dll.SetRk(pl.Predict(a.Wvl))
+		// Imaginary part
+		_ = pl.Fit(aeronet.Wvl, imIdx)
+		a.dll.SetRk(pl.Predict(a.Wvl))
 
-			a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
-			a.dll.DoCalc(a.dll.NDP())
+		a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
+		a.dll.DoCalc(a.dll.NDP())
 
-			// извлекаем данные об оптической толще
-			AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
+		// извлекаем данные об оптической толще
+		AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
 
-			// вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
-			// с учетом формулы Ангстрема
-			for i := range AerOptThickness {
-				LgWavelength[i] = math.Log10(aeronet.Wvl[i])
-				LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
-			}
-
-			// Вычисляем аппроксимационный полином
-			pf.SetXY(LgWavelength, LgAerOptThickness)
-			_ = pf.Fit()
-
-			// Выводим значения оптической толши расчетные и после аппроксимации
-			// Этот участок кода необходим для отладки
-			if DEBUG {
-				fmt.Printf("AOT = %.2f, %.2f \n", a.dll.Xext(),
-					math.Pow(10.0, pf.Evaluate(math.Log10(a.Wvl))))
-			}
-
-			//Добавляем результаты расчета в список
-			tmp := a.dll.CalcResult()
-			tmp.RecordId = recId
-			tmp.SphericalFraction = sphericalFraction
-			calcresultlist.SpheroidList.PushBack(tmp)
+		// вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
+		// с учетом формулы Ангстрема
+		for i := range AerOptThickness {
+			LgWavelength[i] = math.Log10(aeronet.Wvl[i])
+			LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
 		}
+
+		// this is unused code
+		//// Вычисляем аппроксимационный полином
+		//pf.SetXY(LgWavelength, LgAerOptThickness)
+		//_ = pf.Fit()
+		//
+		//// Выводим значения оптической толши расчетные и после аппроксимации
+		//// Этот участок кода необходим для отладки
+		//if DEBUG {
+		//	fmt.Printf("AOT = %.2f, %.2f \n", a.dll.Xext(),
+		//		math.Pow(10.0, pf.Evaluate(math.Log10(a.Wvl))))
+		//}
+
+		//Добавляем результаты расчета в список
+		tmp := a.dll.CalcResult()
+		tmp.RecordId = recId
+		tmp.SphericalFraction = sphericalFraction
+		SpheroidList.PushBack(tmp)
+
 		recId++
 		return ser
 	})
@@ -127,62 +138,64 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 	df.Rapply(func(ser series.Series) series.Series {
 
 		sphericalFraction := ser.Elem(aeronet.IdxSphrericalFract).Float()
-		if sphericalFraction <= sf {
-			reIdx := ser.Subset(aeronet.IdxReM).Float()
-			imIdx := ser.Subset(aeronet.IdxImM).Float()
 
-			// Interpolate refractive index
-			// Real part
-			_ = pl.Fit(aeronet.Wvl, reIdx)
-			a.dll.SetRn(pl.Predict(a.Wvl))
+		reIdx := ser.Subset(aeronet.IdxReM).Float()
+		imIdx := ser.Subset(aeronet.IdxImM).Float()
 
-			// Imaginary part
-			_ = pl.Fit(aeronet.Wvl, imIdx)
-			a.dll.SetRk(pl.Predict(a.Wvl))
+		// Interpolate refractive index
+		// Real part
+		_ = pl.Fit(aeronet.Wvl, reIdx)
+		a.dll.SetRn(pl.Predict(a.Wvl))
 
-			a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
-			a.dll.DoCalc(a.dll.NDP())
+		// Imaginary part
+		_ = pl.Fit(aeronet.Wvl, imIdx)
+		a.dll.SetRk(pl.Predict(a.Wvl))
 
-			// извлекаем данные об оптической толще
-			AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
+		a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
+		a.dll.DoCalc(a.dll.NDP())
 
-			// вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
-			// с учетом формулы Ангстрема
-			for i := range AerOptThickness {
-				LgWavelength[i] = math.Log10(aeronet.Wvl[i])
-				LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
-			}
+		// извлекаем данные об оптической толще
+		AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
 
-			// Вычисляем аппроксимационный полином
-			pf.SetXY(LgWavelength, LgAerOptThickness)
-			_ = pf.Fit()
-
-			// Выводим значения оптической толши расчетные и после аппроксимации
-			// Этот участок кода необходим для отладки
-			if DEBUG {
-				fmt.Printf("AOT = %.2f, %.2f \n", a.dll.Xext(),
-					math.Pow(10.0, pf.Evaluate(math.Log10(a.Wvl))))
-			}
-
-			// Самое время сохранить наши матрицы
-			// сохраняем в расширенном формате, то есть с нулевыми столбцами
-			tmp := a.dll.CalcResult()
-			tmp.RecordId = recId
-			tmp.SphericalFraction = sphericalFraction
-			calcresultlist.SpheresList.PushBack(tmp)
+		// вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
+		// с учетом формулы Ангстрема
+		for i := range AerOptThickness {
+			LgWavelength[i] = math.Log10(aeronet.Wvl[i])
+			LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
 		}
+
+		// this is unused code =====
+		// Вычисляем аппроксимационный полином
+		//pf.SetXY(LgWavelength, LgAerOptThickness)
+		//_ = pf.Fit()
+		//
+		//// Выводим значения оптической толши расчетные и после аппроксимации
+		//// Этот участок кода необходим для отладки
+		//if DEBUG {
+		//	fmt.Printf("AOT = %.2f, %.2f \n", a.dll.Xext(),
+		//		math.Pow(10.0, pf.Evaluate(math.Log10(a.Wvl))))
+		//}
+		// ==========
+
+		// Самое время сохранить наши матрицы
+		// сохраняем в расширенном формате, то есть с нулевыми столбцами
+		tmp := a.dll.CalcResult()
+		tmp.RecordId = recId
+		tmp.SphericalFraction = sphericalFraction
+		SpheresList.PushBack(tmp)
+
 		recId++
 		return ser
 	})
 
-	fmt.Printf("Len1 = %d, Len2 = %d\n", calcresultlist.SpheresList.Size(),
-		calcresultlist.SpheresList.Size())
+	fmt.Printf("Len1 = %d, Len2 = %d\n", SpheresList.Size(),
+		SpheresList.Size())
 
 	// Итак, мы имеем два списка с результатами моделирования
 	// legacy.SpheroidsList и legacy.SpheresList
 	// номер элемента в каждом из списков соответствует номеру измерений
-	tmpSpheroid := calcresultlist.SpheroidList.Front()
-	tmpSphere := calcresultlist.SpheresList.Front()
+	tmpSpheroid := SpheroidList.Front()
+	tmpSphere := SpheresList.Front()
 
 	// Iterate over lists and combine data
 	for (tmpSphere != nil) && (tmpSpheroid != nil) {
@@ -226,15 +239,15 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 				}
 			}
 
-			calcresultlist.CombList.PushBack(combCalcRes)
+			CombList.PushBack(combCalcRes)
 		}
 		tmpSpheroid = tmpSpheroid.Next()
 		tmpSphere = tmpSphere.Next()
 	}
 
-	fmt.Printf("Len3 = %d\n", calcresultlist.CombList.Size())
+	fmt.Printf("Len3 = %d\n", CombList.Size())
 
-	if err := calcresultlist.CombList.SaveResults(); err != nil {
+	if err := CombList.SaveResults(); err != nil {
 		fmt.Println("Ошибка сохранения файлов")
 	}
 }
