@@ -51,7 +51,7 @@ func (c *CalcResultsList) SaveResults() error {
 
 	err := c.ApplyForward(func(cr *calcresult.CalculusResult) {
 		fname := fmt.Sprintf("out/%s_%05d.out", c.prefix, cr.RecordId)
-		saveto := fmt.Sprintf("pic/%s_%05d.pdf", c.prefix, cr.RecordId)
+		saveto := fmt.Sprintf("pic/%s_%05d", c.prefix, cr.RecordId)
 		fout, err := os.Create(fname)
 
 		if err != nil {

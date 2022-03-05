@@ -1,12 +1,10 @@
 package calcresult
 
 import (
-	"fmt"
+	"github.com/kshmirko/prepare-mueller-matrices/plotdumper"
+	"github.com/vdobler/chart"
 	"gonum.org/v1/gonum/mat"
-	"gonum.org/v1/plot"
-	"gonum.org/v1/plot/plotter"
-	"gonum.org/v1/plot/plotutil"
-	"gonum.org/v1/plot/vg"
+	"image/color"
 )
 
 func NewCalcResult(isspheroid bool, rec_id int, ext, sca, absb, volc, lr, mul float64,
@@ -27,43 +25,64 @@ func NewCalcResult(isspheroid bool, rec_id int, ext, sca, absb, volc, lr, mul fl
 }
 
 // DoPlotPolarization Рисует график угловой зависимости степени линейной поляризции
-// и сохраняет его в файл saveto. Формат файла выбирается на основании расширения.
-// Поддерживаются форматы png, pdf.
+// и сохраняет его в файл saveto. Сохоаняются в файлы png, svg и txt
 // Возвращает nil в случае успешного завершения метода
+//                                   Polarization
+//
+//
+//       50  +
+//           |                                 ###
+//           |       :                        ## ###
+//           |       :                      ##     ##
+//       40  +       :                     ##       ##
+//           |       :                    ##         #
+//           |       :                   ##           #
+//       30  +       :                  ##            ##
+//           |       :                 ##              #
+//           |       :                 #                #
+//           |       :                #                 ##
+//  D    20  +       :               ##                  #
+//  O        |       :              #                    ##
+//  P        |       :             #                      #
+//       10  +       :           ##                       ##
+//           |       :         ###                         #
+//           |       :       ###                            #       #
+//           |       :  ######                              #       ##
+//        0  +- - - -#### - - - - - - - - - - - - - - - - - -#- - -#-## - - - -
+//           |       :                                       #     # ##
+//           |       :                                        #   #   #
+//      -10  +       :                                         #  #
+//           |       :                                         ####
+//           |       :                                          #
+//      -20  +-------+-------+-------+--------+-------+-------+-------+--------+
+//          -30      0      30      60       90      120     150     180      210
+//                                    Scattering angle
 func (c *CalculusResult) DoPlotPolarization(saveto string) error {
+	dumper := plotdumper.NewPlotDumper(saveto, 1, 1, 800, 600)
+	defer dumper.Close()
+
 	angle := c.Angle
 	mat := c.MuellerMat
-	pts := make(plotter.XYs, len(angle))
+	dp := make([]float64, len(angle))
 
-	// MuL = - S12/S11 * 100
-	// Но S11 на самом деле S11
-	for i, v := range angle {
+	for i, _ := range angle {
 		S11 := mat.At(i, 0)
 		S12 := mat.At(i, 1)
-		pts[i].X = v
-		pts[i].Y = -S12 / S11 * 100.0
+		dp[i] = -S12 / S11 * 100.0
 	}
 
-	plt := plot.New()
-	sf := fmt.Sprintf("SF = %4.2f", c.SphericalFraction)
-	err := plotutil.AddLines(plt, sf, pts)
-	plt.X.Label.Text = "Scattering angle"
-	plt.Y.Label.Text = "Degree of linear polarization"
-	plt.Title.Text = "μL vs ϑ"
+	pl := chart.ScatterChart{Title: "Polarization"}
 
-	if err != nil {
-		return err
-	}
+	pl.XRange.Label, pl.YRange.Label = "Scattering angle", "DOP"
+	pl.XRange.TicSetting.Grid = 1
+	pl.AddDataPair("", angle, dp, chart.PlotStyleLines,
+		chart.Style{Symbol: '#', SymbolColor: color.NRGBA{0x00, 0x00, 0xff, 0xff}, LineStyle: chart.SolidLine})
+	pl.XRange.ShowZero = true
+	pl.YRange.ShowZero = true
+	pl.XRange.Fixed(0, 180, 30)
+	pl.XRange.TicSetting.Delta = 30
+	pl.YRange.TicSetting.Grid = 1
 
-	plt.Add(plotter.NewGrid())
-	plt.Legend.Top = true
-	plt.X.Padding = 0 * vg.Centimeter
-	plt.Y.Padding = 0 * vg.Centimeter
-	err = plt.Save(15*vg.Centimeter, 12*vg.Centimeter, saveto)
-
-	if err != nil {
-		return err
-	}
-
+	dumper.Plot(&pl)
 	return nil
 }
