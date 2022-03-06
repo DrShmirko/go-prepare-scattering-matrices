@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
 	"github.com/kshmirko/prepare-mueller-matrices/doublyLinkedList"
+	"log"
 	"os"
 )
 
@@ -48,7 +49,22 @@ func (c *CalcResultsList) ApplyBackward(fun func(cr *calcresult.CalculusResult))
 
 // SaveResults - сохрняем весь список, каждый элемент в свой собственный файл
 func (c *CalcResultsList) SaveResults() error {
-
+	// Check for out dir
+	if _, err := os.Stat("./out"); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir("out", 0755); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
+	// Check for pic dir
+	if _, err := os.Stat("./pic"); err != nil {
+		if os.IsNotExist(err) {
+			if err := os.Mkdir("pic", 0755); err != nil {
+				log.Fatal(err)
+			}
+		}
+	}
 	err := c.ApplyForward(func(cr *calcresult.CalculusResult) {
 		fname := fmt.Sprintf("out/%s_%05d.out", c.prefix, cr.RecordId)
 		saveto := fmt.Sprintf("pic/%s_%05d", c.prefix, cr.RecordId)
