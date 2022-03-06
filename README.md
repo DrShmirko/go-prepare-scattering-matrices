@@ -44,3 +44,5 @@ Usage of ./prepare-mueller-matrices:
 ## Если у вас Windows
 
 Для запуска программы на windows, необходимо ее собрать, предварительно скачав из релизов в этом репозитории [архив с динамическими библиотеками](https://github.com/DrShmirko/go-prepare-scattering-matrices/releases/download/v0.2.0/shared_libraries.zip).
+
+Если вы не хотите заморачиваться со сборкой програмы из исходников, просто скачайте бинарники из релизов.
