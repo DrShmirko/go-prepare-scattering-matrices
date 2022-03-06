@@ -11,8 +11,8 @@ import (
 	"strings"
 )
 
-//#cgo LDFLAGS: -L /Users/kshmirko/Documents/Programming/Go/prepare-mueller-matrices/lib -lspheroid
-//#cgo CFLAGS: -I /Users/kshmirko/Documents/Programming/Go/prepare-mueller-matrices/include/
+//#cgo LDFLAGS: -L ../lib -lspheroid
+//#cgo CFLAGS: -I ../include
 //#include "legacy.h"
 //#include <stdlib.h>
 import "C"
