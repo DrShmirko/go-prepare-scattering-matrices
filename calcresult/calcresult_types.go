@@ -1,6 +1,9 @@
 package calcresult
 
-import "gonum.org/v1/gonum/mat"
+import (
+	"gonum.org/v1/gonum/mat"
+	"time"
+)
 
 // CalculusResult - результаты расчетов, описание того, что получено
 // программой
@@ -11,4 +14,5 @@ type CalculusResult struct {
 	MuellerMat                    *mat.Dense
 	Angle                         []float64
 	SphericalFraction             float64
+	Dt                            time.Time
 }

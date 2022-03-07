@@ -3,20 +3,20 @@ package scattlib
 import (
 	"bufio"
 	"fmt"
-	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
-	"github.com/kshmirko/prepare-mueller-matrices/calcresultlist"
-
-	"gonum.org/v1/gonum/mat"
 	"io/ioutil"
 	"log"
 	"math"
 	"strings"
-
+	"time"
+	
 	"github.com/go-gota/gota/dataframe"
 	"github.com/go-gota/gota/series"
 	"github.com/kshmirko/prepare-mueller-matrices/aeronet"
+	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
+	"github.com/kshmirko/prepare-mueller-matrices/calcresultlist"
 	"github.com/kshmirko/prepare-mueller-matrices/legacy"
 	"gonum.org/v1/gonum/interp"
+	"gonum.org/v1/gonum/mat"
 )
 
 // NewMuellerMatrixAERONET конструктор объекта. Создаем экземпляр типа, загружаем библиотеку,
@@ -84,6 +84,23 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 		reIdx := ser.Subset(aeronet.IdxReM).Float()
 		imIdx := ser.Subset(aeronet.IdxImM).Float()
 
+		DateStr := ser.Subset(aeronet.IdxDate).String()
+		TimeStr := ser.Subset(aeronet.IdxTime).String()
+		DateStr = strings.ReplaceAll(DateStr, "[", "")
+		DateStr = strings.ReplaceAll(DateStr, "]", "")
+		DateStrItems := strings.Split(DateStr, ":")
+		DateStr = DateStrItems[2] + "-" + DateStrItems[1] + "-" + DateStrItems[0]
+		TimeStr = strings.ReplaceAll(TimeStr, "[", "")
+		TimeStr = strings.ReplaceAll(TimeStr, "]", "")
+		DateStr = DateStr + "T" + TimeStr + ".000Z"
+
+		// Add code to parse data
+
+		tmpdate, err := time.Parse("2006-01-02T15:04:05.000Z", DateStr)
+		log.Println(tmpdate)
+		if err != nil {
+			log.Println(err)
+		}
 		// Interpolate refractive index
 		// Real part
 		_ = pl.Fit(aeronet.Wvl, reIdx)
@@ -106,21 +123,10 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 			LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
 		}
 
-		// this is unused code
-		//// Вычисляем аппроксимационный полином
-		//pf.SetXY(LgWavelength, LgAerOptThickness)
-		//_ = pf.Fit()
-		//
-		//// Выводим значения оптической толши расчетные и после аппроксимации
-		//// Этот участок кода необходим для отладки
-		//if DEBUG {
-		//	fmt.Printf("AOT = %.2f, %.2f \n", a.dll.Xext(),
-		//		math.Pow(10.0, pf.Evaluate(math.Log10(a.Wvl))))
-		//}
-
 		//Добавляем результаты расчета в список
 		tmp := a.dll.CalcResult()
 		tmp.RecordId = recId
+		tmp.Dt = tmpdate
 		tmp.SphericalFraction = sphericalFraction
 		SpheroidList.PushBack(tmp)
 
@@ -163,19 +169,6 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 			LgWavelength[i] = math.Log10(aeronet.Wvl[i])
 			LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
 		}
-
-		// this is unused code =====
-		// Вычисляем аппроксимационный полином
-		//pf.SetXY(LgWavelength, LgAerOptThickness)
-		//_ = pf.Fit()
-		//
-		//// Выводим значения оптической толши расчетные и после аппроксимации
-		//// Этот участок кода необходим для отладки
-		//if DEBUG {
-		//	fmt.Printf("AOT = %.2f, %.2f \n", a.dll.Xext(),
-		//		math.Pow(10.0, pf.Evaluate(math.Log10(a.Wvl))))
-		//}
-		// ==========
 
 		// Самое время сохранить наши матрицы
 		// сохраняем в расширенном формате, то есть с нулевыми столбцами
@@ -231,6 +224,7 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 			combCalcRes.VolC = calcResSpheroid.VolC
 			combCalcRes.Angle = calcResSpheroid.Angle
 			combCalcRes.SphericalFraction = SphericalFraction
+			combCalcRes.Dt = calcResSpheroid.Dt
 
 			if DEBUG {
 				if SphericalFraction < 0.1 {

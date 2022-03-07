@@ -66,8 +66,10 @@ func (c *CalcResultsList) SaveResults() error {
 		}
 	}
 	err := c.ApplyForward(func(cr *calcresult.CalculusResult) {
-		fname := fmt.Sprintf("out/%s_%05d.out", c.prefix, cr.RecordId)
-		saveto := fmt.Sprintf("pic/%s_%05d", c.prefix, cr.RecordId)
+		fname := fmt.Sprintf("out/%s_%04d%02d%02dT%02d%02d%02d.out", c.prefix, cr.Dt.Year(),
+			cr.Dt.Month(), cr.Dt.Day(), cr.Dt.Hour(), cr.Dt.Minute(), cr.Dt.Second())
+		saveto := fmt.Sprintf("pic/%s_%04d%02d%02dT%02d%02d%02d", c.prefix, cr.Dt.Year(),
+			cr.Dt.Month(), cr.Dt.Day(), cr.Dt.Hour(), cr.Dt.Minute(), cr.Dt.Second())
 		fout, err := os.Create(fname)
 
 		if err != nil {
@@ -82,6 +84,7 @@ func (c *CalcResultsList) SaveResults() error {
 			}
 		}()
 
+		log.Println(cr.Dt)
 		angle := cr.Angle
 		M := cr.MuellerMat
 		rows, _ := M.Dims()

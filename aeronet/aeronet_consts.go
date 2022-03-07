@@ -10,4 +10,6 @@ var (
 	IdxImM             = []int{36, 37, 38, 39}
 	IdxSphrericalFract = 52
 	IdxDayOfYear       = 4
+	IdxDate            = 1
+	IdxTime            = 2
 )
