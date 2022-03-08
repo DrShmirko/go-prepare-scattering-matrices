@@ -9,9 +9,11 @@ import (
 
 func main() {
 	sphericalFraction := flag.Float64("sf", 1,
-		"Установить пороговое значение сферичности")
-	skipRows := flag.Int("skip", 6, "Сколько строк пропускать")
-	waveLen := flag.Float64("wvl", 0.870, "Длина волны для расчета матриц")
+		"Пороговое значение сферичности.")
+	skipRows := flag.Int("skip", 6, "Сколько строк пропускать.")
+	waveLen := flag.Float64("wvl", 0.870, "Длина волны для расчета матриц.")
+	picDir := flag.String("picdir", "./pic", "Каталог, для сохранения графиков.")
+	matDir := flag.String("matdir", "./out", "Каталог, для сохранения матриц.")
 
 	flag.Parse()
 
@@ -46,7 +48,7 @@ func main() {
 	// Initialization of solvers
 
 	mc := scattlib.NewMuellerMatrixAERONET(*waveLen)
-	mc.Run(flag.Arg(0), *sphericalFraction, *skipRows)
+	mc.Run(flag.Arg(0), *sphericalFraction, *skipRows, *matDir, *picDir)
 	mc.Finalize()
 
 }

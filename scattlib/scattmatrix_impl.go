@@ -36,7 +36,7 @@ func NewMuellerMatrixAERONET(wvl float64) *MuellerMatrixAERONET {
 }
 
 // Run - производит вычисления над заданным файлом
-func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
+func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdir, picdir string) {
 	// Read csv file into dataframe
 	content, _ := ioutil.ReadFile(fname)
 	ioContent := bufio.NewReader(strings.NewReader(string(content)))
@@ -241,7 +241,7 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int) {
 
 	fmt.Printf("Len3 = %d\n", CombList.Size())
 
-	if err := a.SaveResults(CombList); err != nil {
+	if err := a.SaveResults(CombList, matdir, picdir); err != nil {
 		fmt.Println("Ошибка сохранения файлов")
 	}
 }
@@ -265,27 +265,27 @@ func (a *MuellerMatrixAERONET) Finalize() {
 	a.dll.DeallocateMemory()
 }
 
-func (a *MuellerMatrixAERONET) SaveResults(lst *calcresultlist.CalcResultsList) error {
+func (a *MuellerMatrixAERONET) SaveResults(lst *calcresultlist.CalcResultsList, matdir, picdir string) error {
 	// Check for out dir
-	if _, err := os.Stat("./out"); err != nil {
+	if _, err := os.Stat(matdir); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.Mkdir("out", 0755); err != nil {
+			if err := os.Mkdir(matdir, 0755); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	// Check for pic dir
-	if _, err := os.Stat("./pic"); err != nil {
+	if _, err := os.Stat(picdir); err != nil {
 		if os.IsNotExist(err) {
-			if err := os.Mkdir("pic", 0755); err != nil {
+			if err := os.Mkdir(picdir, 0755); err != nil {
 				log.Fatal(err)
 			}
 		}
 	}
 	err := lst.ApplyForward(func(cr *calcresult.CalculusResult) {
-		fname := fmt.Sprintf("out/%s_%04d%02d%02dT%02d%02d%02d.out", lst.Prefix, cr.Dt.Year(),
+		fname := fmt.Sprintf("%s/%s_%04d%02d%02dT%02d%02d%02d.out", matdir, lst.Prefix, cr.Dt.Year(),
 			cr.Dt.Month(), cr.Dt.Day(), cr.Dt.Hour(), cr.Dt.Minute(), cr.Dt.Second())
-		saveto := fmt.Sprintf("pic/%s_%04d%02d%02dT%02d%02d%02d", lst.Prefix, cr.Dt.Year(),
+		saveto := fmt.Sprintf("%s/%s_%04d%02d%02dT%02d%02d%02d", picdir, lst.Prefix, cr.Dt.Year(),
 			cr.Dt.Month(), cr.Dt.Day(), cr.Dt.Hour(), cr.Dt.Minute(), cr.Dt.Second())
 		fout, err := os.Create(fname)
 
