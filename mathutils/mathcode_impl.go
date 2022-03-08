@@ -2,6 +2,7 @@ package mathutils
 
 import (
 	"fmt"
+
 	"gonum.org/v1/gonum/mat"
 )
 
@@ -14,6 +15,8 @@ func NewPolyFit(order int) IFit {
 	}
 }
 
+// Fit - решаем систему уравнений, ищем вектор решений - он и будет нашими коффициентами
+// подгона
 func (p *PolyFit) Fit() error {
 	p.Coeffs = make([]float64, 1+p.order)
 
@@ -31,11 +34,13 @@ func (p *PolyFit) Fit() error {
 	return err
 }
 
+// SetXY -  функция для замены исходных данных без повторного создания объекта
 func (p *PolyFit) SetXY(ax, ay []float64) {
 	p.x = append([]float64(nil), ax...)
 	p.y = append([]float64(nil), ay...)
 }
 
+// Evaluate - вычисляет значение  полинома по заданным коэффициентам в выбранной точке
 func (p *PolyFit) Evaluate(x float64) (ret float64) {
 	ret = 0
 	tmp := 1.0
@@ -46,6 +51,8 @@ func (p *PolyFit) Evaluate(x float64) (ret float64) {
 	return
 }
 
+// EvaluateArray - вычисляет значения аппроксимирующего полинома для каждого из
+// значений массива
 func (p *PolyFit) EvaluateArray(x []float64) (ret []float64) {
 	ret = make([]float64, len(x))
 	for i, xi := range x {
@@ -54,6 +61,17 @@ func (p *PolyFit) EvaluateArray(x []float64) (ret []float64) {
 	return
 }
 
+// vandermonde - матрица Вандермонда для вычисления коэффициентов полиномиального
+// подгона
+// Вид матрицы:
+// ============
+// | x0^0, x0^1, x0^2, ..., x0^m-1 |
+// | x1^0, x1^1, x1^2, ..., x1^m-1 |
+// | x2^0, x2^1, x2^2, ..., x2^m-1 |
+// | x3^0, x3^1, x3^2, ..., x3^m-1 |
+// | ............................. |
+// | xn^0, xn^1, xn^2, ..., xn^m-1 |
+// ---------------------------------
 func vandermonde(a []float64, d int) *mat.Dense {
 	x := mat.NewDense(len(a), d, nil)
 	for i := range a {

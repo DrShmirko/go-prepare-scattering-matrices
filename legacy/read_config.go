@@ -1,6 +1,5 @@
 package legacy
 
-import "C"
 import (
 	"bufio"
 	_ "embed"

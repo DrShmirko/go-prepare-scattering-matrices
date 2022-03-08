@@ -8,5 +8,5 @@ import (
 // двусвязный список и строковую пееменную для идентификации данных
 type CalcResultsList struct {
 	*doublyLinkedList.DoublyLinkedList
-	prefix string
+	Prefix string
 }

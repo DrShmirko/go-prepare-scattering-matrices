@@ -3,12 +3,13 @@ package legacy
 import (
 	"errors"
 	"fmt"
-	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
 	"log"
 	"math"
 	"os"
 	"reflect"
 	"unsafe"
+
+	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
 
 	"gonum.org/v1/gonum/mat"
 )

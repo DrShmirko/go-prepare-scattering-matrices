@@ -2,10 +2,9 @@ package main
 
 import (
 	"flag"
-	//"fmt"
-	"github.com/kshmirko/prepare-mueller-matrices/scattlib"
-	//num "gonum.org/v1/gonum"
 	"log"
+
+	"github.com/kshmirko/prepare-mueller-matrices/scattlib"
 )
 
 func main() {

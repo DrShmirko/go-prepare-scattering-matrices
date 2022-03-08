@@ -1,11 +1,14 @@
 package mathutils
 
+// PolyFit - структура для хранения полиномиальной регрессии
 type PolyFit struct {
 	order  int
 	x, y   []float64
 	Coeffs []float64
 }
 
+// IFit - интерфейс для различного рода математических фильтров, сейчас от отвечает
+// за полиномиальный подгон
 type IFit interface {
 	Fit() error
 	SetXY(ax, ay []float64)
