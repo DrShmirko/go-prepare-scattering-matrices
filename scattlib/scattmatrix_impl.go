@@ -301,7 +301,6 @@ func (a *MuellerMatrixAERONET) SaveResults(lst *calcresultlist.CalcResultsList) 
 			}
 		}()
 
-		log.Println(cr.Dt)
 		angle := cr.Angle
 		M := cr.MuellerMat
 		rows, _ := M.Dims()
