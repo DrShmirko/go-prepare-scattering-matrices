@@ -31,12 +31,16 @@
 
 ```bash
 Usage of ./prepare-mueller-matrices:
+  -matdir string
+        Каталог, для сохранения матриц. (default "./out")
+  -picdir string
+        Каталог, для сохранения графиков. (default "./pic")
   -sf float
-        Установить пороговое значение сферичности (default 1), 1<=sf<=99
+        Пороговое значение сферичности. (default 1)
   -skip int
-        Сколько строк пропускать (default 6), 0<=skip<10
+        Сколько строк пропускать. (default 6)
   -wvl float
-        Длина волны для расчета матриц (default 0.87), 0.440<=wvl<=1.064
+        Длина волны для расчета матриц. (default 0.87)
         
 ```
 
