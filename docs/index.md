@@ -1,37 +1,11 @@
-## Welcome to GitHub Pages
+## Для чего он нужен?
 
-You can use the [editor on GitHub](https://github.com/DrShmirko/go-prepare-scattering-matrices/edit/main/docs/index.md) to maintain and preview the content for your website in Markdown files.
+Моя команда используем модель MCPOLART для асчета переноса солнечной радиации в системе атмосфера-подстилающая поверхность. Сама модель - векторная, то есть вычисляет перенос не интенсивности, а всех компонент вектора Стокса S=[I, Q, U, V]. В случае солнечного излученияна верхней границе атмосферы вектор сторка будет иметь вид S=[1.0,0,0]. В результате распространения излучения и рассеяния на частицах аэрозоля и молекулах, вектор стокса каким-то образом трансформируется в вектор S'=[I, Q, U, V]. 
 
-Whenever you commit to this repository, GitHub Pages will run [Jekyll](https://jekyllrb.com/) to rebuild the pages in your site, from the content in your Markdown files.
+Для работы этой модели необходимо иметь матрицы рассеяния для аэрозольных слоев, располагаемых в атмосфере. Для случайно-ориенированных частиц ненулевыми будут только 6 компонент из 16, а именно: S11, S12, S22, S33, S34, S44.
 
-### Markdown
+Само же распределение частиц по размерам определяется микрофизичскими хаактеристиками, такими как комплексный показатель преломления m, функция распрелеления частиц по размерам, форма частиц. Имея эти параметры, мы можем вычислить матрицы рассеяния, а уже имея матрицы рассеяния, программный код MCPOLART определит регистрируемый приемником вектор Стокса.
 
-Markdown is a lightweight and easy-to-use syntax for styling your writing. It includes conventions for
+Эта программа решает следующую заадачу - на основе данных AERONET решает прямую задачу и вычисляет матрицы рассеяния для частиц.
 
-```markdown
-Syntax highlighted code block
-
-# Header 1
-## Header 2
-### Header 3
-
-- Bulleted
-- List
-
-1. Numbered
-2. List
-
-**Bold** and _Italic_ and `Code` text
-
-[Link](url) and ![Image](src)
-```
-
-For more details see [Basic writing and formatting syntax](https://docs.github.com/en/github/writing-on-github/getting-started-with-writing-and-formatting-on-github/basic-writing-and-formatting-syntax).
-
-### Jekyll Themes
-
-Your Pages site will use the layout and styles from the Jekyll theme you have selected in your [repository settings](https://github.com/DrShmirko/go-prepare-scattering-matrices/settings/pages). The name of this theme is saved in the Jekyll `_config.yml` configuration file.
-
-### Support or Contact
-
-Having trouble with Pages? Check out our [documentation](https://docs.github.com/categories/github-pages-basics/) or [contact support](https://support.github.com/contact) and we’ll help you sort it out.
+## Как ей пользоваться?
