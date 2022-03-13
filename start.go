@@ -46,7 +46,13 @@ func main() {
 	}
 
 	// Initialization of solvers
+	//_, err := agglomerated.LoadFromFile("mod_agglomerated_debris_shape_01.npz.cdf")
+	//if err != nil {
+	//	fmt.Println(err)
+	//}
 
+	//_ = *picDir
+	//_ = *matDir
 	mc := scattlib.NewMuellerMatrixAERONET(*waveLen)
 	mc.Run(flag.Arg(0), *sphericalFraction, *skipRows, *matDir, *picDir)
 	mc.Finalize()

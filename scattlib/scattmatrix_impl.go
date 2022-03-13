@@ -306,8 +306,8 @@ func (a *MuellerMatrixAERONET) SaveResults(lst *calcresultlist.CalcResultsList, 
 		rows, _ := M.Dims()
 		Vc := cr.VolC
 		_, _ = fmt.Fprintf(fout, "%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e\t%9.3e"+
-			"# Ext/V, Sca/V, Absb/V, LR, MuL, V \n",
-			cr.Ext/Vc, cr.Sca/Vc, cr.Absb/Vc, cr.Lr, cr.MuL, cr.VolC)
+			"# Sca/V, Ext/V, Absb/V, LR, MuL, V \n",
+			cr.Sca/Vc, cr.Ext/Vc, cr.Absb/Vc, cr.Lr, cr.MuL, cr.VolC)
 		_, _ = fmt.Fprintf(fout, "%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t"+
 			"%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\n",
 			"Angle", "S11", "S12", "S13", "S14", "S21", "S22", "S23",
