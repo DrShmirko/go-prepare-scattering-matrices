@@ -1,4 +1,4 @@
-
+# Prepare Scattering Matrices (Go version)
 
 ## Для чего он нужен?
 
