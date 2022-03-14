@@ -124,6 +124,7 @@ func (c *CalculusResult) DoSaveMatrixToFile(fname string) error {
 		"Angle", "S11", "S12", "S13", "S14", "S21", "S22", "S23",
 		"S24", "S31", "S32", "S33", "S34", "S41", "S42", "S43",
 		"S44")
+	_, _ = fmt.Fprintf(fout, "%d\n", len(angle))
 	for i := 0; i < rows; i++ {
 		_, _ = fmt.Fprintf(fout, "%9.3f\t", angle[i])
 		_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 0))  //S11
