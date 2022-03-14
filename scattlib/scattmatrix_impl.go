@@ -5,7 +5,6 @@ import (
 	"fmt"
 	"io/ioutil"
 	"log"
-	"math"
 	"os"
 	"strings"
 	"time"
@@ -61,8 +60,8 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 	pl := interp.PiecewiseLinear{}
 
 	// Allocate memory for wavelength arrays
-	LgWavelength := make([]float64, len(aeronet.IdxAot))
-	LgAerOptThickness := make([]float64, len(aeronet.IdxAot))
+	//LgWavelength := make([]float64, len(aeronet.IdxAot))
+	//LgAerOptThickness := make([]float64, len(aeronet.IdxAot))
 
 	// Initialize lists for storage processed items
 	SpheroidList := calcresultlist.NewCalcResultsList("sphrd")
@@ -110,18 +109,19 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 		_ = pl.Fit(aeronet.Wvl, imIdx)
 		a.dll.SetRk(pl.Predict(a.Wvl))
 
+		// Set Volume SD to library storage
 		a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
 		a.dll.DoCalc(a.dll.NDP())
 
-		// извлекаем данные об оптической толще
-		AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
+		// // извлекаем данные об оптической толще
+		// AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
 
-		// вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
-		// с учетом формулы Ангстрема
-		for i := range AerOptThickness {
-			LgWavelength[i] = math.Log10(aeronet.Wvl[i])
-			LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
-		}
+		// // вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
+		// // с учетом формулы Ангстрема
+		// for i := range AerOptThickness {
+		// 	LgWavelength[i] = math.Log10(aeronet.Wvl[i])
+		// 	LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
+		// }
 
 		//Добавляем результаты расчета в список
 		tmp := a.dll.CalcResult()
@@ -160,15 +160,15 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 		a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
 		a.dll.DoCalc(a.dll.NDP())
 
-		// извлекаем данные об оптической толще
-		AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
+		// // извлекаем данные об оптической толще
+		// AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
 
-		// вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
-		// с учетом формулы Ангстрема
-		for i := range AerOptThickness {
-			LgWavelength[i] = math.Log10(aeronet.Wvl[i])
-			LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
-		}
+		// // вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
+		// // с учетом формулы Ангстрема
+		// for i := range AerOptThickness {
+		// 	LgWavelength[i] = math.Log10(aeronet.Wvl[i])
+		// 	LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
+		// }
 
 		// Самое время сохранить наши матрицы
 		// сохраняем в расширенном формате, то есть с нулевыми столбцами
@@ -265,12 +265,20 @@ func (a *MuellerMatrixAERONET) Finalize() {
 	a.dll.DeallocateMemory()
 }
 
+// SaveResults - save results to pic and mat files
+// Pictures are generated in svg, png and txt format
+// aerosol scattering file has following structure
+//   * 1st line: SSA, EXT
+//   * 2nd line: Headers
+//   * 3rd line: number of angles
+//   * Angle, S11, S12, S13, S14, S21, S22, S33, ..., S44
+// SSA = SCA/EXT, ABS=EXT-SCA
 func (a *MuellerMatrixAERONET) SaveResults(lst *calcresultlist.CalcResultsList, matdir, picdir string) error {
 	// Check for out dir
 	if _, err := os.Stat(matdir); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir(matdir, 0755); err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}
@@ -278,24 +286,26 @@ func (a *MuellerMatrixAERONET) SaveResults(lst *calcresultlist.CalcResultsList, 
 	if _, err := os.Stat(picdir); err != nil {
 		if os.IsNotExist(err) {
 			if err := os.Mkdir(picdir, 0755); err != nil {
-				log.Fatal(err)
+				return err
 			}
 		}
 	}
+
+	// Apply function to every item of list
 	err := lst.ApplyForward(func(cr *calcresult.CalculusResult) {
 		fname := fmt.Sprintf("%s/%s_%04d%02d%02dT%02d%02d%02d.out", matdir, lst.Prefix, cr.Dt.Year(),
 			cr.Dt.Month(), cr.Dt.Day(), cr.Dt.Hour(), cr.Dt.Minute(), cr.Dt.Second())
 		saveto := fmt.Sprintf("%s/%s_%04d%02d%02dT%02d%02d%02d", picdir, lst.Prefix, cr.Dt.Year(),
 			cr.Dt.Month(), cr.Dt.Day(), cr.Dt.Hour(), cr.Dt.Minute(), cr.Dt.Second())
 
-		err := cr.DoSaveMatrixToFile(fname)
-
-		if err != nil {
-			fmt.Printf("Error %s", err)
-			return
+		if err := cr.DoSaveMatrixToFile(fname); err != nil {
+			log.Fatalf("Error %s", err)
 		}
 
-		_ = cr.DoPlotPolarization(saveto)
+		if err := cr.DoPlotPolarization(saveto); err != nil {
+			log.Fatalf("Error %s", err)
+		}
+
 	})
 	return err
 }

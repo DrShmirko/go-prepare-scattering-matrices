@@ -95,10 +95,15 @@ func (c *CalculusResult) DoPlotPolarization(saveto string) error {
 	pl.XRange.TicSetting.Delta = 30
 	pl.YRange.TicSetting.Grid = 1
 
-	dumper.Plot(&pl)
+	err = dumper.Plot(&pl)
+	if err != nil {
+		return err
+	}
 	return nil
 }
 
+// DoSaveMatrixToFile - сохраняет матрицы в требуемом формате в файл fname
+// в случае возниконовения и
 func (c *CalculusResult) DoSaveMatrixToFile(fname string) error {
 
 	fout, err := os.Create(fname)
