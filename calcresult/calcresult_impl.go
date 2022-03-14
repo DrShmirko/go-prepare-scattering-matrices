@@ -1,10 +1,13 @@
 package calcresult
 
 import (
+	"fmt"
+	"image/color"
+	"os"
+
 	"github.com/kshmirko/prepare-mueller-matrices/plotdumper"
 	"github.com/vdobler/chart"
 	"gonum.org/v1/gonum/mat"
-	"image/color"
 )
 
 func NewCalcResult(isspheroid bool, recId int, ext, sca, absb, volc, lr, mul float64,
@@ -58,8 +61,17 @@ func NewCalcResult(isspheroid bool, recId int, ext, sca, absb, volc, lr, mul flo
 //          -30      0      30      60       90      120     150     180      210
 //                                    Scattering angle
 func (c *CalculusResult) DoPlotPolarization(saveto string) error {
-	dumper := plotdumper.NewPlotDumper(saveto, 1, 1, 800, 600)
-	defer dumper.Close()
+	dumper, err := plotdumper.NewPlotDumper(saveto, 1, 1, 800, 600)
+
+	if err != nil {
+		return err
+	}
+	defer func() {
+		err := dumper.Close()
+		if err != nil {
+			fmt.Print(err)
+		}
+	}()
 
 	angle := c.Angle
 	mtrx := c.MuellerMat
@@ -84,5 +96,52 @@ func (c *CalculusResult) DoPlotPolarization(saveto string) error {
 	pl.YRange.TicSetting.Grid = 1
 
 	dumper.Plot(&pl)
+	return nil
+}
+
+func (c *CalculusResult) DoSaveMatrixToFile(fname string) error {
+
+	fout, err := os.Create(fname)
+
+	if err != nil {
+		return fmt.Errorf("error creating file %s, %s", fname, err)
+	}
+
+	defer func() {
+		err := fout.Close()
+		if err != nil {
+			fmt.Printf("Error closing file %s, err=%s", fname, err)
+		}
+	}()
+
+	angle := c.Angle
+	M := c.MuellerMat
+	rows, _ := M.Dims()
+
+	_, _ = fmt.Fprintf(fout, "%9.3e\t%9.3e\n", c.Sca/c.Ext, c.Ext)
+	_, _ = fmt.Fprintf(fout, "%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t"+
+		"%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\t%9s\n",
+		"Angle", "S11", "S12", "S13", "S14", "S21", "S22", "S23",
+		"S24", "S31", "S32", "S33", "S34", "S41", "S42", "S43",
+		"S44")
+	for i := 0; i < rows; i++ {
+		_, _ = fmt.Fprintf(fout, "%9.3f\t", angle[i])
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 0))  //S11
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 1))  //S12
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S13
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S13
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 1))  //S21
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 2))  //S22
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S23
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S24
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S31
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S32
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 3))  //S33
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", M.At(i, 4))  //S34
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S41
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", 0.0)         //S42
+		_, _ = fmt.Fprintf(fout, "%9.3e\t", -M.At(i, 4)) //S43
+		_, _ = fmt.Fprintf(fout, "%9.3e\n", M.At(i, 5))  //S44
+	}
 	return nil
 }

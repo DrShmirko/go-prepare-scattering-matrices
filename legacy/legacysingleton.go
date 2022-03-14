@@ -517,7 +517,7 @@ func (s *Singleton) MuellerMatrix() ([]float64, *mat.Dense) {
 	ret := mat.NewDense(int(C.km), 16, nil)
 
 	angle, _ := s.Angle()
-	AOT := s.Xsca()
+
 	f11 := s.F11()
 	f12 := s.F12()
 	f22 := s.F22()
@@ -531,7 +531,6 @@ func (s *Singleton) MuellerMatrix() ([]float64, *mat.Dense) {
 	// рассеяния, при этом интеграл первого элемента ее по телесному
 	// углу должен быть равен АОТ
 	for i := 0; i < N; i++ {
-		f11[i] = f11[i] * AOT / (4 * math.Pi)
 		f12[i] = -f12[i] * f11[i]
 		f22[i] = f22[i] * f11[i]
 		f33[i] = f33[i] * f11[i]
@@ -557,7 +556,7 @@ func (s *Singleton) MuellerMatrixShort() ([]float64, *mat.Dense) {
 	ret := mat.NewDense(int(C.km), 6, nil)
 
 	angle, _ := s.Angle()
-	AOT := s.Xsca()
+	//AOT := s.Xsca()
 	f11 := s.F11()
 	f12 := s.F12()
 	f22 := s.F22()
@@ -570,7 +569,6 @@ func (s *Singleton) MuellerMatrixShort() ([]float64, *mat.Dense) {
 	// рассеяния, при этом интеграл первого элемента ее по телесному
 	// углу должен быть равен АОТ
 	for i := 0; i < N; i++ {
-		f11[i] = f11[i] * AOT / (4 * math.Pi)
 		f12[i] = -f12[i] * f11[i]
 		f22[i] = f22[i] * f11[i]
 		f33[i] = f33[i] * f11[i]
