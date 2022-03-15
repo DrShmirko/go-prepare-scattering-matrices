@@ -1,12 +1,9 @@
 package scattlib
 
 import (
-	"bufio"
 	"fmt"
-	"io/ioutil"
 	"log"
 	"os"
-	"strings"
 
 	"github.com/kshmirko/prepare-mueller-matrices/aeronet"
 	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
@@ -34,21 +31,9 @@ func NewMuellerMatrixAERONET(wvl float64) *MuellerMatrixAERONET {
 // Run - производит вычисления над заданным файлом
 func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdir, picdir string) {
 	// Read csv file into dataframe
-	content, _ := ioutil.ReadFile(fname)
-	ioContent := bufio.NewReader(strings.NewReader(string(content)))
-
-	_ = sf
-	// Skip necessary amount of  lines
-	for i := 0; i < skiprows; i++ {
-		_, err := ioContent.ReadString('\n')
-		if err != nil {
-			log.Printf("При чтении файла возникла ошибка (возможно файл пуст). %v", err)
-		}
-	}
 
 	// Читаем файл в DataFrame. Важно, чтобы структура таблицы данных
 	// сохраняла свой формат, я имею ввиду, сделование столбцов с данными
-	//df := dataframe.ReadCSV(ioContent, dataframe.HasHeader(true))
 
 	df1, err := aeronet.NewAeronetDatasets(fname, skiprows)
 	if err != nil {
