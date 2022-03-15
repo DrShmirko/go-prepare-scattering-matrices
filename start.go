@@ -10,7 +10,7 @@ import (
 func main() {
 	sphericalFraction := flag.Float64("sf", 1,
 		"Пороговое значение сферичности.")
-	skipRows := flag.Int("skip", 6, "Сколько строк пропускать.")
+	skipRows := flag.Int("skip", 7, "Сколько строк пропускать.")
 	waveLen := flag.Float64("wvl", 0.870, "Длина волны для расчета матриц.")
 	picDir := flag.String("picdir", "./pic", "Каталог, для сохранения графиков.")
 	matDir := flag.String("matdir", "./out", "Каталог, для сохранения матриц.")
