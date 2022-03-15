@@ -5,13 +5,13 @@ import (
 	"image/color"
 	"os"
 
+	"github.com/kshmirko/prepare-mueller-matrices/mathutils"
 	"github.com/kshmirko/prepare-mueller-matrices/plotdumper"
 	"github.com/vdobler/chart"
-	"gonum.org/v1/gonum/mat"
 )
 
 func NewCalcResult(isspheroid bool, recId int, ext, sca, absb, volc, lr, mul float64,
-	mm *mat.Dense, angle []float64, sf float64) *CalculusResult {
+	mm *mathutils.SimpleMatrix, angle []float64, sf float64) *CalculusResult {
 	return &CalculusResult{
 		isSpheroid:        isspheroid,
 		RecordId:          recId,

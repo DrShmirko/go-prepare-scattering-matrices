@@ -9,8 +9,7 @@ import (
 	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
 	"github.com/kshmirko/prepare-mueller-matrices/calcresultlist"
 	"github.com/kshmirko/prepare-mueller-matrices/legacy"
-	"gonum.org/v1/gonum/interp"
-	"gonum.org/v1/gonum/mat"
+	"github.com/kshmirko/prepare-mueller-matrices/mathutils"
 )
 
 // NewMuellerMatrixAERONET конструктор объекта. Создаем экземпляр типа, загружаем библиотеку,
@@ -41,12 +40,9 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 	}
 
 	// filter out values
-	df1 = df1.Filter(func(v *aeronet.AeronetDataset) bool {
+	df1 = df1.Filter(func(v aeronet.AeronetDataset) bool {
 		return v.SphericalFraction < sf
 	})
-
-	// Prepare for interpolation of refractive index
-	pl := interp.PiecewiseLinear{}
 
 	// Initialize lists for storage processed items
 	SpheroidList := calcresultlist.NewCalcResultsList("sphrd")
@@ -55,14 +51,22 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 
 	recId := 0
 
-	df1.Apply(func(v aeronet.AeronetDataset) {
+	df1.ApplyCopy(func(v aeronet.AeronetDataset) aeronet.AeronetDataset {
 
-		_ = pl.Fit(aeronet.Wvl, v.ReIdx)
-		a.dll.SetRn(pl.Predict(a.Wvl))
+		Fun := mathutils.Function{
+			X: aeronet.Wvl,
+			Y: v.ReIdx,
+		}
+
+		a.dll.SetRn(Fun.At(a.Wvl))
 
 		// Imaginary part
-		_ = pl.Fit(aeronet.Wvl, v.ImIdx)
-		a.dll.SetRk(pl.Predict(a.Wvl))
+		Fun = mathutils.Function{
+			X: aeronet.Wvl,
+			Y: v.ImIdx,
+		}
+
+		a.dll.SetRk(Fun.At(a.Wvl))
 
 		// Set Volume SD to library storage
 		a.dll.SetSd(v.VolSd)
@@ -76,6 +80,7 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 		SpheroidList.PushBack(tmp)
 
 		recId++
+		return v
 	})
 
 	// Сбрасываем настройки и готовимся к загрузке сферических матриц
@@ -86,16 +91,24 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 
 	recId = 0
 
-	df1.Apply(func(v aeronet.AeronetDataset) {
+	df1.Apply(func(v *aeronet.AeronetDataset) {
 
 		// Interpolate refractive index
 		// Real part
-		_ = pl.Fit(aeronet.Wvl, v.ReIdx)
-		a.dll.SetRn(pl.Predict(a.Wvl))
+		Fun := mathutils.Function{
+			X: aeronet.Wvl,
+			Y: v.ReIdx,
+		}
+
+		a.dll.SetRn(Fun.At(a.Wvl))
 
 		// Imaginary part
-		_ = pl.Fit(aeronet.Wvl, v.ImIdx)
-		a.dll.SetRk(pl.Predict(a.Wvl))
+		Fun = mathutils.Function{
+			X: aeronet.Wvl,
+			Y: v.ImIdx,
+		}
+
+		a.dll.SetRk(Fun.At(a.Wvl))
 
 		a.dll.SetSd(v.VolSd)
 		a.dll.DoCalc(a.dll.NDP())
@@ -142,11 +155,11 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 				(1.0-SphericalFraction)*calcResSpheroid.Absb
 
 			combCalcRes.Lr = combCalcRes.Ext / combBsc
-			var c1, c2, c3 mat.Dense
-			c1.Scale(SphericalFraction, calcResSphere.MuellerMat)
-			c2.Scale(1.0-SphericalFraction, calcResSpheroid.MuellerMat)
-			c3.Add(&c1, &c2)
-			combCalcRes.MuellerMat = &c3
+			var c1, c2 *mathutils.SimpleMatrix
+			c1 = calcResSphere.MuellerMat.Scale(SphericalFraction)
+			c2 = calcResSpheroid.MuellerMat.Scale(1.0 - SphericalFraction)
+			c1 = c2.Add(c1)
+			combCalcRes.MuellerMat = c1
 			r, _ := combCalcRes.MuellerMat.Dims()
 			combCalcRes.MuL = ((combCalcRes.MuellerMat.At(r-1, 0) - combCalcRes.MuellerMat.At(r-1, 2)) /
 				(combCalcRes.MuellerMat.At(r-1, 0) + combCalcRes.MuellerMat.At(r-1, 2))) * 100

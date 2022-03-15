@@ -1,8 +1,9 @@
 package calcresult
 
 import (
-	"gonum.org/v1/gonum/mat"
 	"time"
+
+	"github.com/kshmirko/prepare-mueller-matrices/mathutils"
 )
 
 // CalculusResult - результаты расчетов, описание того, что получено
@@ -11,7 +12,7 @@ type CalculusResult struct {
 	isSpheroid                    bool
 	RecordId                      int
 	Ext, Sca, Absb, VolC, Lr, MuL float64
-	MuellerMat                    *mat.Dense
+	MuellerMat                    *mathutils.SimpleMatrix
 	Angle                         []float64
 	SphericalFraction             float64
 	Dt                            time.Time

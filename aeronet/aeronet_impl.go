@@ -2,7 +2,6 @@ package aeronet
 
 import (
 	"bufio"
-	"fmt"
 	"io/ioutil"
 	"log"
 	"strconv"
@@ -10,7 +9,9 @@ import (
 	"time"
 )
 
-func NewAeronetDatasets(filename string, skiprows int) (*AeronetDatasets, error) {
+// NewAeronetDatasets - читает из файла данные расчетов AERONET. Пропускает skiprows
+// строк. Возвращает масив AeronetDatasets
+func NewAeronetDatasets(filename string, skiprows int) (AeronetDatasets, error) {
 
 	content, err := ioutil.ReadFile(filename)
 	if err != nil {
@@ -18,7 +19,8 @@ func NewAeronetDatasets(filename string, skiprows int) (*AeronetDatasets, error)
 	}
 
 	ioreader := bufio.NewReader(strings.NewReader(string(content)))
-	var res AeronetDatasets
+
+	res := make(AeronetDatasets, 0, 20)
 
 	lineno := 0
 	for {
@@ -33,10 +35,10 @@ func NewAeronetDatasets(filename string, skiprows int) (*AeronetDatasets, error)
 
 			tmp := AeronetDataset{
 				TimePoint:         extract_timepoint(items),
-				AotExt:            extract_fields(IdxAot, items),
-				ReIdx:             extract_fields(IdxReM, items),
-				ImIdx:             extract_fields(IdxImM, items),
-				VolSd:             extract_fields(IdxDvDlnr, items),
+				AotExt:            extract_field(IdxAot, items),
+				ReIdx:             extract_field(IdxReM, items),
+				ImIdx:             extract_field(IdxImM, items),
+				VolSd:             extract_field(IdxDvDlnr, items),
 				SphericalFraction: extract_sphericalfraction(items),
 			}
 
@@ -44,10 +46,12 @@ func NewAeronetDatasets(filename string, skiprows int) (*AeronetDatasets, error)
 
 		}
 	}
-	fmt.Println(len(res))
-	return &res, nil
+
+	return res, nil
 }
 
+// extract_timepoint - из списка токенов выделяет дату и время и
+// объединет в одну переменную
 func extract_timepoint(items []string) time.Time {
 
 	DateStrItems := strings.Split(items[IdxDate], ":")
@@ -61,6 +65,7 @@ func extract_timepoint(items []string) time.Time {
 	return ret
 }
 
+// extract_sphericalfraction - извлекает сферичность из набора токенов
 func extract_sphericalfraction(items []string) float64 {
 
 	ret, err := strconv.ParseFloat(items[IdxSphrericalFract], 64)
@@ -70,7 +75,8 @@ func extract_sphericalfraction(items []string) float64 {
 	return ret
 }
 
-func extract_fields(idx []int, items []string) []float64 {
+// extract_fields - извлекае поле, указанное idx из набора лексем
+func extract_field(idx []int, items []string) []float64 {
 	ret := make([]float64, len(idx))
 	var err error
 
@@ -82,23 +88,31 @@ func extract_fields(idx []int, items []string) []float64 {
 	return ret
 }
 
-// Filter filter function
-func (a *AeronetDatasets) Filter(fun func(v *AeronetDataset) bool) *AeronetDatasets {
-	var ret AeronetDatasets
+// Filter filter function - apply boolean function fo each element of the array AeronetDatasets
+func (a *AeronetDatasets) Filter(fun func(v AeronetDataset) bool) AeronetDatasets {
+	ret := make(AeronetDatasets, 0, 20)
 
 	for _, v := range *a {
-		if fun(&v) {
+		if fun(v) {
 			ret = append(ret, v)
 		}
 	}
-	return &ret
+	return ret
 }
 
 // Apply filter function
-func (a *AeronetDatasets) Apply(fun func(v AeronetDataset)) {
+func (a *AeronetDatasets) Apply(fun func(v *AeronetDataset)) {
 	for i := 0; i < a.Size(); i++ {
-		fun((*a)[i])
+		fun(&(*a)[i])
 	}
+}
+
+// Apply filter function
+func (a AeronetDatasets) ApplyCopy(fun func(v AeronetDataset) AeronetDataset) AeronetDatasets {
+	for i := 0; i < a.Size(); i++ {
+		a[i] = fun(a[i])
+	}
+	return a
 }
 
 func (a *AeronetDatasets) Size() int {

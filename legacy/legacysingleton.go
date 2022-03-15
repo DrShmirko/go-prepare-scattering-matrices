@@ -10,8 +10,7 @@ import (
 	"unsafe"
 
 	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
-
-	"gonum.org/v1/gonum/mat"
+	"github.com/kshmirko/prepare-mueller-matrices/mathutils"
 )
 
 //#cgo LDFLAGS: -L ../lib -lspheroid
@@ -513,8 +512,8 @@ func (s *Singleton) PrintKeyParams() {
 }
 
 // MuellerMatrix / Возвращает угол рассеяния и матрицу рассеяния
-func (s *Singleton) MuellerMatrix() ([]float64, *mat.Dense) {
-	ret := mat.NewDense(int(C.km), 16, nil)
+func (s *Singleton) MuellerMatrix() ([]float64, *mathutils.SimpleMatrix) {
+	ret := mathutils.NewSimpleMatrix(int(C.km), 16, nil)
 
 	angle, _ := s.Angle()
 
@@ -552,8 +551,8 @@ func (s *Singleton) MuellerMatrix() ([]float64, *mat.Dense) {
 	return angle, ret
 }
 
-func (s *Singleton) MuellerMatrixShort() ([]float64, *mat.Dense) {
-	ret := mat.NewDense(int(C.km), 6, nil)
+func (s *Singleton) MuellerMatrixShort() ([]float64, *mathutils.SimpleMatrix) {
+	ret := mathutils.NewSimpleMatrix(int(C.km), 6, nil)
 
 	angle, _ := s.Angle()
 	//AOT := s.Xsca()

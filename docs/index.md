@@ -52,7 +52,7 @@ Usage of ./prepare-mueller-matrices:
   -sf float
         Пороговое значение сферичности. (default 1)
   -skip int
-        Сколько строк пропускать. (default 6)
+        Сколько строк пропускать. (default 7)
   -wvl float
         Длина волны для расчета матриц. (default 0.87)
 ```

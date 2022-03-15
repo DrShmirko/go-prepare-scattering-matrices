@@ -6,7 +6,6 @@ require (
 	github.com/ajstarks/svgo v0.0.0-20211024235047-1546f124cd8b
 	github.com/batchatco/go-native-netcdf v0.0.0-20211030163244-c16639d41f54
 	github.com/vdobler/chart v1.0.0
-	gonum.org/v1/gonum v0.9.3
 )
 
 require (
