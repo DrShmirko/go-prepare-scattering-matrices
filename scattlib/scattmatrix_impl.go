@@ -7,10 +7,7 @@ import (
 	"log"
 	"os"
 	"strings"
-	"time"
 
-	"github.com/go-gota/gota/dataframe"
-	"github.com/go-gota/gota/series"
 	"github.com/kshmirko/prepare-mueller-matrices/aeronet"
 	"github.com/kshmirko/prepare-mueller-matrices/calcresult"
 	"github.com/kshmirko/prepare-mueller-matrices/calcresultlist"
@@ -51,87 +48,49 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 
 	// Читаем файл в DataFrame. Важно, чтобы структура таблицы данных
 	// сохраняла свой формат, я имею ввиду, сделование столбцов с данными
-	df := dataframe.ReadCSV(ioContent, dataframe.HasHeader(true))
+	//df := dataframe.ReadCSV(ioContent, dataframe.HasHeader(true))
 
-	// подготавливаем инструмент для аппроксимации оптической толщи
-	//pf := mathutils.NewPolyFit(1)
+	df1, err := aeronet.NewAeronetDatasets(fname, skiprows)
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	// filter out values
+	df1 = df1.Filter(func(v *aeronet.AeronetDataset) bool {
+		return v.SphericalFraction < sf
+	})
 
 	// Prepare for interpolation of refractive index
 	pl := interp.PiecewiseLinear{}
-
-	// Allocate memory for wavelength arrays
-	//LgWavelength := make([]float64, len(aeronet.IdxAot))
-	//LgAerOptThickness := make([]float64, len(aeronet.IdxAot))
 
 	// Initialize lists for storage processed items
 	SpheroidList := calcresultlist.NewCalcResultsList("sphrd")
 	SpheresList := calcresultlist.NewCalcResultsList("sphrs")
 	CombList := calcresultlist.NewCalcResultsList("total")
 
-	// Before Rapply, let's filter out those records, in which Spherical Fraction < sf.
-	df = df.Filter(dataframe.F{
-		Colidx:     aeronet.IdxSphrericalFract,
-		Comparator: series.LessEq,
-		Comparando: sf,
-	})
-
 	recId := 0
-	// apply calc function to each row of dataset
-	df.Rapply(func(ser series.Series) series.Series {
 
-		sphericalFraction := ser.Elem(aeronet.IdxSphrericalFract).Float()
+	df1.Apply(func(v aeronet.AeronetDataset) {
 
-		reIdx := ser.Subset(aeronet.IdxReM).Float()
-		imIdx := ser.Subset(aeronet.IdxImM).Float()
-
-		DateStr := ser.Subset(aeronet.IdxDate).String()
-		TimeStr := ser.Subset(aeronet.IdxTime).String()
-		DateStr = strings.ReplaceAll(DateStr, "[", "")
-		DateStr = strings.ReplaceAll(DateStr, "]", "")
-		DateStrItems := strings.Split(DateStr, ":")
-		DateStr = DateStrItems[2] + "-" + DateStrItems[1] + "-" + DateStrItems[0]
-		TimeStr = strings.ReplaceAll(TimeStr, "[", "")
-		TimeStr = strings.ReplaceAll(TimeStr, "]", "")
-		DateStr = DateStr + "T" + TimeStr + ".000Z"
-
-		// Add code to parse data
-
-		tmpdate, err := time.Parse("2006-01-02T15:04:05.000Z", DateStr)
-		if err != nil {
-			log.Println(err)
-		}
-		// Interpolate refractive index
-		// Real part
-		_ = pl.Fit(aeronet.Wvl, reIdx)
+		_ = pl.Fit(aeronet.Wvl, v.ReIdx)
 		a.dll.SetRn(pl.Predict(a.Wvl))
 
 		// Imaginary part
-		_ = pl.Fit(aeronet.Wvl, imIdx)
+		_ = pl.Fit(aeronet.Wvl, v.ImIdx)
 		a.dll.SetRk(pl.Predict(a.Wvl))
 
 		// Set Volume SD to library storage
-		a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
+		a.dll.SetSd(v.VolSd)
 		a.dll.DoCalc(a.dll.NDP())
-
-		// // извлекаем данные об оптической толще
-		// AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
-
-		// // вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
-		// // с учетом формулы Ангстрема
-		// for i := range AerOptThickness {
-		// 	LgWavelength[i] = math.Log10(aeronet.Wvl[i])
-		// 	LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
-		// }
 
 		//Добавляем результаты расчета в список
 		tmp := a.dll.CalcResult()
 		tmp.RecordId = recId
-		tmp.Dt = tmpdate
-		tmp.SphericalFraction = sphericalFraction
+		tmp.Dt = v.TimePoint
+		tmp.SphericalFraction = v.SphericalFraction
 		SpheroidList.PushBack(tmp)
 
 		recId++
-		return ser
 	})
 
 	// Сбрасываем настройки и готовимся к загрузке сферических матриц
@@ -141,44 +100,30 @@ func (a *MuellerMatrixAERONET) Run(fname string, sf float64, skiprows int, matdi
 	a.dll.AllocateMemory()
 
 	recId = 0
-	df.Rapply(func(ser series.Series) series.Series {
 
-		sphericalFraction := ser.Elem(aeronet.IdxSphrericalFract).Float()
-
-		reIdx := ser.Subset(aeronet.IdxReM).Float()
-		imIdx := ser.Subset(aeronet.IdxImM).Float()
+	df1.Apply(func(v aeronet.AeronetDataset) {
 
 		// Interpolate refractive index
 		// Real part
-		_ = pl.Fit(aeronet.Wvl, reIdx)
+		_ = pl.Fit(aeronet.Wvl, v.ReIdx)
 		a.dll.SetRn(pl.Predict(a.Wvl))
 
 		// Imaginary part
-		_ = pl.Fit(aeronet.Wvl, imIdx)
+		_ = pl.Fit(aeronet.Wvl, v.ImIdx)
 		a.dll.SetRk(pl.Predict(a.Wvl))
 
-		a.dll.SetSd(ser.Subset(aeronet.IdxDvDlnr).Float())
+		a.dll.SetSd(v.VolSd)
 		a.dll.DoCalc(a.dll.NDP())
-
-		// // извлекаем данные об оптической толще
-		// AerOptThickness := ser.Subset(aeronet.IdxAot).Float()
-
-		// // вычисляем десятичный логарифм длины волны и оптической толщи для аппроксимации
-		// // с учетом формулы Ангстрема
-		// for i := range AerOptThickness {
-		// 	LgWavelength[i] = math.Log10(aeronet.Wvl[i])
-		// 	LgAerOptThickness[i] = math.Log10(AerOptThickness[i])
-		// }
 
 		// Самое время сохранить наши матрицы
 		// сохраняем в расширенном формате, то есть с нулевыми столбцами
 		tmp := a.dll.CalcResult()
 		tmp.RecordId = recId
-		tmp.SphericalFraction = sphericalFraction
+		tmp.SphericalFraction = v.SphericalFraction
+		tmp.Dt = v.TimePoint
 		SpheresList.PushBack(tmp)
 
 		recId++
-		return ser
 	})
 
 	fmt.Printf("Len1 = %d, Len2 = %d\n", SpheresList.Size(),

@@ -53,6 +53,7 @@ func main() {
 
 	//_ = *picDir
 	//_ = *matDir
+	//_, _ = aeronet.NewAeronetDatasets("20020101_20211231_Tomsk.all", )
 	mc := scattlib.NewMuellerMatrixAERONET(*waveLen)
 	mc.Run(flag.Arg(0), *sphericalFraction, *skipRows, *matDir, *picDir)
 	mc.Finalize()
