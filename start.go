@@ -2,9 +2,8 @@ package main
 
 import (
 	"flag"
-	"log"
-
 	"github.com/kshmirko/prepare-mueller-matrices/scattlib"
+	"log"
 )
 
 func main() {
